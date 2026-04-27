@@ -1,20 +1,21 @@
 //main.cpp
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
 #include "wifi_manager.h"
-#include "light_control.h"
 #include "sender.h"
 #include "pir_sensor.h"
 
-#define SERVER_HOST "203.255.15.92"
-#define TCP_PORT 22300
+namespace {
+constexpr const char* kServerHost = "203.255.15.92";
+constexpr uint16_t kTcpPort = 22300;
+
+constexpr uint32_t kPirReportIntervalMs = 1000;
+constexpr uint8_t kPirPin = D5; // NodeMCU D5 = GPIO14
+} // namespace
 
 static bool control_flag = true;
-
-// "5번 핀"을 보드 실크의 D5로 연결한 경우가 많아서 D5(GPIO14)로 맞춥니다.
-// 만약 진짜 GPIO5(D1)에 꽂았다면 PIR_PIN을 D1로 바꿔주세요.
-static const uint8_t PIR_PIN = D5; // NodeMCU D5 = GPIO14
 static bool last_pir = false;
+static unsigned long last_pir_report_ms = 0;
+static unsigned long last_detect_send_ms = 0;
 
 static volatile bool pir_change_event = false;
 
@@ -27,29 +28,36 @@ void setup() {
   Serial.begin(115200);
   delay(500);
 
-  //wifi_setting
   connect_wifi(true);
   ap_setting(false);
   connection_check();
 
-  //light_control
-  pinMode(LED_BUILTIN, OUTPUT);
-  //sensor_define
-  pir_init(PIR_PIN);
+  pir_init(kPirPin);
   last_pir = pir_read();
   Serial.print("PIR initial state: ");
   Serial.println(last_pir ? "HIGH" : "LOW");
 
-  // 상태 변화(HIGH/LOW)를 모두 보기 위해 CHANGE 인터럽트 사용
-  attachInterrupt(digitalPinToInterrupt(PIR_PIN), on_pir_change, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(kPirPin), on_pir_change, CHANGE);
   control_flag = true;
-
 }
 
-
-
 void loop() {
-  builtin_light(LED_BUILTIN);
+  unsigned long now = millis();
+  if (now - last_pir_report_ms >= kPirReportIntervalMs) {
+    last_pir_report_ms = now;
+    bool pir = pir_read();
+    Serial.print("PIR(now): ");
+    Serial.println(pir ? "MOTION(HIGH)" : "NO MOTION(LOW)");
+
+    // 인터럽트를 놓치거나 PIR이 HIGH로 유지되는 동안에도 전송이 되도록
+    // 주기 샘플에서 HIGH면 일정 주기로 Detected!를 보냅니다.
+    if (pir && control_flag && (now - last_detect_send_ms >= kPirReportIntervalMs)) {
+      last_detect_send_ms = now;
+      if (!send_tcp_line(kServerHost, kTcpPort, "Detected!")) {
+        Serial.println("send_tcp_line: failed (periodic)");
+      }
+    }
+  }
 
   // 인터럽트로 감지된 경우에만 처리 (HIGH/LOW 모두 출력)
   if (pir_change_event) {
@@ -64,9 +72,10 @@ void loop() {
 
     // 감지 순간(LOW->HIGH)에만 서버로 1회 전송
     if (rising && control_flag) {
-      send_tcp_line(SERVER_HOST, TCP_PORT, "Detected!");
+      if (!send_tcp_line(kServerHost, kTcpPort, "Detected!")) {
+        Serial.println("send_tcp_line: failed (edge)");
+      }
     }
   }
 
-  // 주기적 "hi" 전송은 PIR 테스트가 끝난 뒤 필요하면 다시 켜세요.
 }

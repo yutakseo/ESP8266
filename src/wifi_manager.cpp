@@ -4,11 +4,13 @@
 #include <ESP8266HTTPClient.h>
 #include "wifi_manager.h"
 
-const char* ssid = "psm3";
-const char* password = "psm0403!";
+namespace {
+const char* kStaSsid = "psm3";
+const char* kStaPassword = "psm0403!";
 
-const char* ap_ssid = "ESP8266-12E";
-const char* ap_password = "12345678";
+const char* kApSsid = "ESP8266-12E";
+const char* kApPassword = "12345678";
+} // namespace
 
 
 bool connection_check() {
@@ -41,8 +43,7 @@ void connect_wifi(bool control) {
   if (control) {
     Serial.println("\nConnecting to WiFi...");
     WiFi.mode(WIFI_AP_STA);
-    //wifi connect
-    WiFi.begin(ssid, password);
+    WiFi.begin(kStaSsid, kStaPassword);
     int retry = 0;
     while (WiFi.status() != WL_CONNECTED) {
       delay(500);
@@ -62,7 +63,6 @@ void connect_wifi(bool control) {
 
 void ap_setting(bool control) {
   if (control) {
-    //wifi ap start
-    WiFi.softAP(ap_ssid, ap_password);
+    WiFi.softAP(kApSsid, kApPassword);
   }
 }

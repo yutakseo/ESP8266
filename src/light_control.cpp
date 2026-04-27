@@ -1,7 +1,5 @@
 //lighting_control.cpp
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
-#include <ESP8266HTTPClient.h>
 #include "light_control.h"
 
 void builtin_light(int led_pin) {
