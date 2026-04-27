@@ -1,8 +1,8 @@
-//setting_wifi.cpp
+//wifi_manager.cpp
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
-#include "wifi_set.h"
+#include "wifi_manager.h"
 
 const char* ssid = "psm3";
 const char* password = "psm0403!";
