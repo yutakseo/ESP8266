@@ -1,27 +1,23 @@
+//main.cpp
 #include <Arduino.h>
 #include "wifi_set.h"
-#include "sensor.h"
+#include "light_control.h"
+
+
 
 void setup() {
   Serial.begin(115200);
-  delay(1000);
+  delay(500);
 
-  wifiConnect();
-  internetCheck();
+  //wifi_setting
+  connect_wifi(true);
+  ap_setting(false);
+  connection_check();
 
-  sensorInit();
+  //light_control
+  pinMode(LED_BUILTIN, OUTPUT);
 }
 
 void loop() {
-  bool motion = motionRead();
-
-  if (motion) {
-    Serial.println("Motion detected");
-    ledSet(true);
-  } else {
-    Serial.println("No motion");
-    ledSet(false);
-  }
-
-  delay(200);
+  builtin_light(LED_BUILTIN);
 }
