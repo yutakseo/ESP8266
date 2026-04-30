@@ -13,3 +13,4 @@ bool pir_read() {
   if (g_pir_pin == 255) return false;
   return digitalRead(g_pir_pin) == HIGH;
 }
+

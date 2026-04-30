@@ -5,8 +5,9 @@
 #include "wifi_manager.h"
 
 namespace {
-const char* kStaSsid = "psm3";
-const char* kStaPassword = "psm0403!";
+const char* kStaSsid = "TAKS-PI_NET";
+const char* kStaPassword = "@sjk980318";
+//const char* kStaPassword = "psm0403!";
 
 const char* kApSsid = "ESP8266-12E";
 const char* kApPassword = "12345678";
